@@ -87,6 +87,25 @@ func thereShouldBeButtons(handler *internal.Handler) func(context.Context, int) 
 	}
 }
 
+// we pass images
+func thereShouldBeImage(handler *internal.Handler) func(context.Context, int) (context.Context, error) {
+	return func(ctx context.Context, numImages int) (context.Context, error) {
+		botId, ok := ctx.Value(botIdCtxKey{}).(int64)
+		if !ok {
+			return ctx, errors.New("there are no botid")
+		}
+
+		for i := 0; i < numImages; i++ {
+			_, err := handler.TgClient.GetUpdate(ctx, botId)
+			if err != nil {
+				return ctx, errors.New("error getting update")
+			}
+		}
+
+		return ctx, nil
+	}
+}
+
 func textShouldMatch(handler *internal.Handler) func(context.Context, *godog.DocString) (context.Context, error) {
 	return func(ctx context.Context, body *godog.DocString) (context.Context, error) {
 		prevMessage, ok := ctx.Value(prevBotResponse{}).(*tg.BotResponse)
@@ -128,6 +147,7 @@ func InitializeScenario(sc *godog.ScenarioContext, handler *internal.Handler) {
 	sc.Step(`^there is bot (\d+)$`, thereIsBot(handler))
 	sc.Step(`^I sent "([^"]*)"$`, iSent(handler))
 	sc.Step(`^there should be (\d+) buttons$`, thereShouldBeButtons(handler))
+	sc.Step(`^there should be (\d+) image$`, thereShouldBeButtons(handler))
 	sc.Step(`^I push "([^"]*)"$`, iPush(handler))
 	sc.Step(`^the text should be:$`, textShouldMatch(handler))
 	sc.Step(`^here we go again$`, resedDb(handler))
